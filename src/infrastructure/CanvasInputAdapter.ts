@@ -9,6 +9,7 @@ export class CanvasInputAdapter implements IWireInputHandler {
 
     private drawingCallback: ((wire: Wire) => void) | null = null;
     private completeCallback: ((wire: Wire) => void) | null = null;
+    private probeMoveCallback: ((pos: Vector3D | null) => void) | null = null;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -23,6 +24,10 @@ export class CanvasInputAdapter implements IWireInputHandler {
         this.completeCallback = callback;
     }
 
+    onProbeMove(callback: (pos: Vector3D | null) => void): void {
+        this.probeMoveCallback = callback;
+    }
+
     clearState(): void {
         this.rawPoints = [];
         this.isDrawing = false;
@@ -35,10 +40,27 @@ export class CanvasInputAdapter implements IWireInputHandler {
         });
 
         this.canvas.addEventListener('mousemove', (e) => {
-            if (!this.isDrawing) return;
-            this.rawPoints.push({ x: e.offsetX, y: e.offsetY, z: 0 });
-            if (this.drawingCallback) {
-                this.drawingCallback(this.buildWire());
+            const currentPos = { x: e.offsetX, y: e.offsetY, z: 0 };
+            
+            // Si el usuario solo mueve el mouse (Sensor)
+            if (!this.isDrawing && this.probeMoveCallback) {
+                this.probeMoveCallback(currentPos);
+                return;
+            }
+
+            // Si el usuario está dibujando
+            if (this.isDrawing) {
+                this.rawPoints.push(currentPos);
+                if (this.drawingCallback) {
+                    this.drawingCallback(this.buildWire());
+                }
+            }
+        });
+
+        this.canvas.addEventListener('mouseleave', () => {
+            // Ocultar el sensor si el mouse sale del canvas
+            if (!this.isDrawing && this.probeMoveCallback) {
+                this.probeMoveCallback(null);
             }
         });
 
@@ -46,7 +68,6 @@ export class CanvasInputAdapter implements IWireInputHandler {
             if (!this.isDrawing) return;
             this.isDrawing = false;
             
-            // Optimización de trazo: evitar segmentos ultra cortos
             const optimizedPoints: Vector3D[] = [];
             if(this.rawPoints.length > 0) optimizedPoints.push(this.rawPoints[0]);
             

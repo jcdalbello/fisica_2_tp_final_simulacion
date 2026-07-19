@@ -8,12 +8,20 @@
     <style>
         body { margin: 0; background: #fff; color: #000; font-family: monospace; padding: 20px; }
         h2 { border-bottom: 2px solid #000; padding-bottom: 5px; }
-        canvas { background: #f4f4f4; border: 2px solid #000; cursor: crosshair; display: block; margin: 20px 0; }
-        .controls { display: flex; gap: 20px; align-items: center; border: 1px solid #ccc; padding: 10px; width: fit-content; }
+        .controls { display: flex; gap: 20px; align-items: center; border: 1px solid #ccc; padding: 10px; width: fit-content; margin-bottom: 10px; }
         .control-group { display: flex; flex-direction: column; gap: 5px; }
         button { padding: 5px 10px; cursor: pointer; border: 2px solid #000; background: #fff; font-family: monospace; font-weight: bold; }
         button:hover { background: #000; color: #fff; }
         input[type="range"] { cursor: pointer; }
+        
+        /* Panel del sensor */
+        .probe-panel { border: 2px solid #1976d2; padding: 10px; margin-bottom: 20px; width: fit-content; font-size: 1.1em; background: #f8f9fa; }
+        .probe-value { font-weight: bold; color: #d32f2f; }
+        
+        /* Sistema de capas para el Canvas */
+        .canvas-container { position: relative; width: 800px; height: 600px; border: 2px solid #000; background: #f4f4f4; cursor: crosshair; }
+        .canvas-layer { position: absolute; top: 0; left: 0; }
+        #overlayCanvas { pointer-events: none; /* Deja pasar los clics al canvas de abajo */ }
     </style>
 </head>
 <body>
@@ -33,7 +41,16 @@
         </div>
     </div>
 
-    <canvas id="simCanvas" width="800" height="600"></canvas>
+    <!-- Interfaz del sensor -->
+    <div class="probe-panel">
+        Sensor de Campo Magnético (Bz): <span id="probeValue" class="probe-value">0.00</span>
+    </div>
+
+    <!-- Contenedor con dos canvas superpuestos -->
+    <div class="canvas-container">
+        <canvas id="simCanvas" class="canvas-layer" width="800" height="600"></canvas>
+        <canvas id="overlayCanvas" class="canvas-layer" width="800" height="600"></canvas>
+    </div>
 
     <script type="module" src="/src/main.ts"></script>
 </body>

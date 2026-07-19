@@ -3,8 +3,9 @@ import { BiotSavartCalculator } from './application/BiotSavartCalculator';
 import { CanvasRenderer } from './infrastructure/CanvasRenderer';
 import { UIStateAdapter } from './infrastructure/UIStateAdapter';
 import { CanvasInputAdapter } from './infrastructure/CanvasInputAdapter';
+import { ProbeUIAdapter } from './infrastructure/ProbeUIAdapter';
 import { Wire, Vector3D, FieldPoint } from './domain/entities';
-import { IBiotSavartSolver, IRenderer, ISimulationState, IWireInputHandler } from './domain/ports';
+import { IBiotSavartSolver, IRenderer, ISimulationState, IWireInputHandler, IProbeUI } from './domain/ports';
 
 class SimulationController {
     private gridPoints: Vector3D[] = [];
@@ -16,6 +17,7 @@ class SimulationController {
         private renderer: IRenderer,
         private stateProvider: ISimulationState,
         private inputHandler: IWireInputHandler,
+        private probeUI: IProbeUI,
         private width: number,
         private height: number
     ) {
@@ -35,6 +37,7 @@ class SimulationController {
     private setupWiring() {
         this.inputHandler.onWireDrawing((wire: Wire) => {
             this.renderer.clear();
+            this.probeUI.displayFieldValue(0);
             this.renderer.renderSimulation(wire, [], 0); 
         });
 
@@ -42,6 +45,28 @@ class SimulationController {
             this.currentWire = wire;
             this.calculateBaseField();
             this.renderFinal();
+        });
+
+        // Configuración de la lógica del Sensor (Probe)
+        this.inputHandler.onProbeMove((position: Vector3D | null) => {
+            this.renderer.renderProbe(position);
+            
+            if (position === null || this.currentWire.segments.length === 0) {
+                this.probeUI.displayFieldValue(0);
+                return;
+            }
+
+            // Calcula el campo solo en el punto exacto del mouse (muy ligero)
+            const fieldBase = this.solver.calculateFieldAt(position, this.currentWire);
+            
+            if (fieldBase === null) {
+                this.probeUI.displayFieldValue(null); // Caso Singularidad
+            } else {
+                const multiplier = this.stateProvider.getCurrentMultiplier();
+                const visualMultiplier = 100 * multiplier;
+                // Como el problema es en plano XY, solo existe Bz
+                this.probeUI.displayFieldValue(fieldBase.z * visualMultiplier);
+            }
         });
 
         if (this.stateProvider instanceof UIStateAdapter) {
@@ -64,31 +89,35 @@ class SimulationController {
     }
 
     public renderFinal() {
-        this.renderer.clear();
+        // Solo limpia y recalcula la capa inferior
         const multiplier = this.stateProvider.getCurrentMultiplier(); 
         const visualMultiplier = 100 * multiplier;
         this.renderer.renderSimulation(this.currentWire, this.currentBaseField, visualMultiplier);
     }
 }
 
-const canvas = document.getElementById('simCanvas') as HTMLCanvasElement;
+const simCanvas = document.getElementById('simCanvas') as HTMLCanvasElement;
+const overlayCanvas = document.getElementById('overlayCanvas') as HTMLCanvasElement;
 const btnClear = document.getElementById('btnClear') as HTMLButtonElement;
 
 const calculator = new BiotSavartCalculator();
-const renderer = new CanvasRenderer(canvas);
+const renderer = new CanvasRenderer(simCanvas, overlayCanvas);
 const stateAdapter = new UIStateAdapter();
-const inputAdapter = new CanvasInputAdapter(canvas);
+const inputAdapter = new CanvasInputAdapter(simCanvas); // Escucha eventos solo en el canvas de abajo
+const probeAdapter = new ProbeUIAdapter();
 
 new SimulationController(
     calculator, 
     renderer, 
     stateAdapter, 
     inputAdapter, 
-    canvas.width, 
-    canvas.height
+    probeAdapter,
+    simCanvas.width, 
+    simCanvas.height
 );
 
 btnClear.addEventListener('click', () => {
     renderer.clear();
     inputAdapter.clearState();
+    probeAdapter.displayFieldValue(0);
 });

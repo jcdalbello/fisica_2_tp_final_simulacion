@@ -75,9 +75,9 @@ export class CanvasRenderer implements IRenderer {
 
         for (const data of fieldData) {
             const mag = data.fieldVector.z * multiplier;
-            let intensity = Math.pow(Math.abs(mag) / maxB, 0.4);
+            let intensity = Math.pow(Math.abs(mag) / maxB, 0.3);
             
-            if (intensity < 0.05) continue;
+            if (intensity < 0.2) continue;
 
             // Se vuelve a píxeles para ubicar los indicadores visuales
             const pxX = data.point.x / this.pixelsToMeters;

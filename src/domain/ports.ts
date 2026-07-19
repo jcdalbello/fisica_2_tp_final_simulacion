@@ -1,4 +1,3 @@
-// src/domain/ports.ts
 import { Vector3D, Wire, FieldPoint } from './entities';
 
 export interface IBiotSavartSolver {

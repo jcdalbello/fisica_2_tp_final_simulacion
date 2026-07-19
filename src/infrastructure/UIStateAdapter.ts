@@ -1,4 +1,3 @@
-// src/infrastructure/UIStateAdapter.ts
 import { ISimulationState } from '../domain/ports';
 
 export class UIStateAdapter implements ISimulationState {

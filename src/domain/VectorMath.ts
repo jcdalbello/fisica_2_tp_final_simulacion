@@ -1,4 +1,3 @@
-// src/domain/VectorMath.ts
 import { Vector3D } from './entities';
 
 export const VectorMath = {

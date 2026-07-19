@@ -1,4 +1,3 @@
-// src/domain/entities.ts
 export interface Vector3D {
     readonly x: number;
     readonly y: number;

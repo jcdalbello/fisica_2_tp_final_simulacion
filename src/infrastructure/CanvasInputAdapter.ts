@@ -1,4 +1,3 @@
-// src/infrastructure/CanvasInputAdapter.ts
 import { Wire, Vector3D, Segment } from '../domain/entities';
 import { IWireInputHandler } from '../domain/ports';
 
@@ -12,7 +11,7 @@ export class CanvasInputAdapter implements IWireInputHandler {
     private completeCallback: ((wire: Wire) => void) | null = null;
     private probeMoveCallback: ((pos: Vector3D | null) => void) | null = null;
 
-    // Se inyecta la escala
+    // Scale in meters
     constructor(canvas: HTMLCanvasElement, pixelsToMeters: number) {
         this.canvas = canvas;
         this.pixelsToMeters = pixelsToMeters;
@@ -67,7 +66,6 @@ export class CanvasInputAdapter implements IWireInputHandler {
             const optimizedPoints: Vector3D[] = [];
             if(this.rawPointsMeters.length > 0) optimizedPoints.push(this.rawPointsMeters[0]);
             
-            // Tolerancia de optimización convertida a metros (5px)
             const toleranceMeters = 5 * this.pixelsToMeters;
 
             for(let i = 1; i < this.rawPointsMeters.length; i++){

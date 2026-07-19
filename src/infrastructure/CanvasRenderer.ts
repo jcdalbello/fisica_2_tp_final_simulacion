@@ -1,4 +1,3 @@
-// src/infrastructure/CanvasRenderer.ts
 import { Wire, FieldPoint, Vector3D } from '../domain/entities';
 import { IRenderer } from '../domain/ports';
 
@@ -52,7 +51,6 @@ export class CanvasRenderer implements IRenderer {
     private drawWire(wire: Wire, multiplier: number, phase: number): void {
         if (wire.segments.length === 0) return;
         
-        // 1. Dibujar el cable principal
         this.ctxMain.beginPath();
         this.ctxMain.moveTo(wire.segments[0].start.x / this.pixelsToMeters, wire.segments[0].start.y / this.pixelsToMeters);
         for (const seg of wire.segments) {
@@ -62,13 +60,10 @@ export class CanvasRenderer implements IRenderer {
         this.ctxMain.lineWidth = 4;
         this.ctxMain.stroke();
 
-        // 2. Lógica de animación fluida de flechas
         const arrowSpacingPx = 40; 
 
-        // La fase ya viene acumulada desde el controlador (la velocidad ya está aplicada)
         let offset = phase % arrowSpacingPx;
         
-        // El signo de la corriente invierte el sentido
         if (multiplier < 0) {
             offset = arrowSpacingPx - offset;
         }

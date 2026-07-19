@@ -1,4 +1,3 @@
-// src/infrastructure/ProbeUIAdapter.ts
 import { IProbeUI } from '../domain/ports';
 
 export class ProbeUIAdapter implements IProbeUI {
@@ -15,10 +14,8 @@ export class ProbeUIAdapter implements IProbeUI {
             return;
         }
 
-        // Conversión de Teslas a microteslas (1 T = 10^6 µT)
         const valueInMicroTeslas = value * 1e6;
         
-        // Al estar en microteslas, podemos volver a usar 2 decimales fijos
         const formatted = valueInMicroTeslas.toFixed(2);
         
         this.displayElement.textContent = `${formatted} [µT]`;

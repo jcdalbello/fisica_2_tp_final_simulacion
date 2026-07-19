@@ -7,15 +7,28 @@ export const VectorMath = {
         y: a.z * b.x - a.x * b.z,
         z: a.x * b.y - a.y * b.x
     }),
+
     add: (a: Vector3D, b: Vector3D): Vector3D => ({
         x: a.x + b.x, 
         y: a.y + b.y, 
         z: a.z + b.z
     }),
+
     sub: (a: Vector3D, b: Vector3D): Vector3D => ({
         x: a.x - b.x, 
         y: a.y - b.y, 
         z: a.z - b.z
     }),
-    mag: (v: Vector3D): number => Math.sqrt(v.x ** 2 + v.y ** 2 + v.z ** 2)
+
+    mag: (v: Vector3D): number => Math.sqrt(v.x ** 2 + v.y ** 2 + v.z ** 2),
+
+    normalize: (v: Vector3D): Vector3D => {
+        const magnitud = VectorMath.mag(v);
+        if (magnitud === 0) return { x: 0, y: 0, z: 0 }; // Evita NaN por división por cero
+        return {
+            x: v.x / magnitud,
+            y: v.y / magnitud,
+            z: v.z / magnitud
+        };
+    }
 };

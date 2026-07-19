@@ -18,11 +18,7 @@ export class BiotSavartCalculator implements IBiotSavartSolver {
             // Todo está en metros, la física es pura
             if (rMag < this.SINGULARITY_THRESHOLD) return null;
 
-            const rUnit: Vector3D = {
-                x: rVec.x / rMag,
-                y: rVec.y / rMag,
-                z: rVec.z / rMag
-            };
+            const rUnit: Vector3D = VectorMath.normalize(rVec);
 
             const crossProduct = VectorMath.cross(seg.deltaL, rUnit);
 

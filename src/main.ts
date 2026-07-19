@@ -18,18 +18,24 @@ class SimulationController {
         private stateProvider: ISimulationState,
         private inputHandler: IWireInputHandler,
         private probeUI: IProbeUI,
-        private width: number,
-        private height: number
+        private widthPx: number,
+        private heightPx: number,
+        private pixelsToMeters: number
     ) {
         this.generateGrid();
         this.setupWiring();
     }
 
     private generateGrid() {
-        const spacing = 20;
-        for (let x = spacing / 2; x < this.width; x += spacing) {
-            for (let y = spacing / 2; y < this.height; y += spacing) {
-                this.gridPoints.push({ x, y, z: 0 });
+        const spacingPx = 20;
+        // La grilla se genera directamente en metros
+        for (let xPx = spacingPx / 2; xPx < this.widthPx; xPx += spacingPx) {
+            for (let yPx = spacingPx / 2; yPx < this.heightPx; yPx += spacingPx) {
+                this.gridPoints.push({ 
+                    x: xPx * this.pixelsToMeters, 
+                    y: yPx * this.pixelsToMeters, 
+                    z: 0 
+                });
             }
         }
     }
@@ -60,7 +66,6 @@ class SimulationController {
             if (fieldBase === null) {
                 this.probeUI.displayFieldValue(null);
             } else {
-                // Se lee la corriente actual real en Amperes desde el slider
                 const currentI = this.stateProvider.getCurrentMultiplier();
                 this.probeUI.displayFieldValue(fieldBase.z * currentI);
             }
@@ -87,7 +92,6 @@ class SimulationController {
 
     public renderFinal() {
         this.renderer.clear();
-        // Se envía la corriente real (I) al renderizador
         const currentI = this.stateProvider.getCurrentMultiplier(); 
         this.renderer.renderSimulation(this.currentWire, this.currentBaseField, currentI);
     }
@@ -97,10 +101,13 @@ const simCanvas = document.getElementById('simCanvas') as HTMLCanvasElement;
 const overlayCanvas = document.getElementById('overlayCanvas') as HTMLCanvasElement;
 const btnClear = document.getElementById('btnClear') as HTMLButtonElement;
 
+// Se define la escala en la capa superior y se inyecta en cascada
+const PIXELS_TO_METERS = 0.01; 
+
 const calculator = new BiotSavartCalculator();
-const renderer = new CanvasRenderer(simCanvas, overlayCanvas);
+const renderer = new CanvasRenderer(simCanvas, overlayCanvas, PIXELS_TO_METERS);
 const stateAdapter = new UIStateAdapter();
-const inputAdapter = new CanvasInputAdapter(simCanvas); 
+const inputAdapter = new CanvasInputAdapter(simCanvas, PIXELS_TO_METERS); 
 const probeAdapter = new ProbeUIAdapter();
 
 new SimulationController(
@@ -110,7 +117,8 @@ new SimulationController(
     inputAdapter, 
     probeAdapter,
     simCanvas.width, 
-    simCanvas.height
+    simCanvas.height,
+    PIXELS_TO_METERS
 );
 
 btnClear.addEventListener('click', () => {

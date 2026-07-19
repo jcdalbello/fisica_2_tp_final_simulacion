@@ -4,64 +4,60 @@ import { IWireInputHandler } from '../domain/ports';
 
 export class CanvasInputAdapter implements IWireInputHandler {
     private isDrawing = false;
-    private rawPoints: Vector3D[] = [];
+    private rawPointsMeters: Vector3D[] = []; // Ahora almacena estado en metros
     private canvas: HTMLCanvasElement;
+    private pixelsToMeters: number;
 
     private drawingCallback: ((wire: Wire) => void) | null = null;
     private completeCallback: ((wire: Wire) => void) | null = null;
     private probeMoveCallback: ((pos: Vector3D | null) => void) | null = null;
 
-    constructor(canvas: HTMLCanvasElement) {
+    // Se inyecta la escala
+    constructor(canvas: HTMLCanvasElement, pixelsToMeters: number) {
         this.canvas = canvas;
+        this.pixelsToMeters = pixelsToMeters;
         this.bindEvents();
     }
 
-    onWireDrawing(callback: (wire: Wire) => void): void {
-        this.drawingCallback = callback;
-    }
-
-    onWireComplete(callback: (wire: Wire) => void): void {
-        this.completeCallback = callback;
-    }
-
-    onProbeMove(callback: (pos: Vector3D | null) => void): void {
-        this.probeMoveCallback = callback;
-    }
+    onWireDrawing(callback: (wire: Wire) => void): void { this.drawingCallback = callback; }
+    onWireComplete(callback: (wire: Wire) => void): void { this.completeCallback = callback; }
+    onProbeMove(callback: (pos: Vector3D | null) => void): void { this.probeMoveCallback = callback; }
 
     clearState(): void {
-        this.rawPoints = [];
+        this.rawPointsMeters = [];
         this.isDrawing = false;
     }
 
     private bindEvents() {
         this.canvas.addEventListener('mousedown', (e) => {
             this.isDrawing = true;
-            this.rawPoints = [{ x: e.offsetX, y: e.offsetY, z: 0 }];
+            this.rawPointsMeters = [{ 
+                x: e.offsetX * this.pixelsToMeters, 
+                y: e.offsetY * this.pixelsToMeters, 
+                z: 0 
+            }];
         });
 
         this.canvas.addEventListener('mousemove', (e) => {
-            const currentPos = { x: e.offsetX, y: e.offsetY, z: 0 };
+            const currentPosMeters = { 
+                x: e.offsetX * this.pixelsToMeters, 
+                y: e.offsetY * this.pixelsToMeters, 
+                z: 0 
+            };
             
-            // Si el usuario solo mueve el mouse (Sensor)
             if (!this.isDrawing && this.probeMoveCallback) {
-                this.probeMoveCallback(currentPos);
+                this.probeMoveCallback(currentPosMeters);
                 return;
             }
 
-            // Si el usuario está dibujando
             if (this.isDrawing) {
-                this.rawPoints.push(currentPos);
-                if (this.drawingCallback) {
-                    this.drawingCallback(this.buildWire());
-                }
+                this.rawPointsMeters.push(currentPosMeters);
+                if (this.drawingCallback) this.drawingCallback(this.buildWire());
             }
         });
 
         this.canvas.addEventListener('mouseleave', () => {
-            // Ocultar el sensor si el mouse sale del canvas
-            if (!this.isDrawing && this.probeMoveCallback) {
-                this.probeMoveCallback(null);
-            }
+            if (!this.isDrawing && this.probeMoveCallback) this.probeMoveCallback(null);
         });
 
         this.canvas.addEventListener('mouseup', () => {
@@ -69,14 +65,17 @@ export class CanvasInputAdapter implements IWireInputHandler {
             this.isDrawing = false;
             
             const optimizedPoints: Vector3D[] = [];
-            if(this.rawPoints.length > 0) optimizedPoints.push(this.rawPoints[0]);
+            if(this.rawPointsMeters.length > 0) optimizedPoints.push(this.rawPointsMeters[0]);
             
-            for(let i = 1; i < this.rawPoints.length; i++){
+            // Tolerancia de optimización convertida a metros (5px)
+            const toleranceMeters = 5 * this.pixelsToMeters;
+
+            for(let i = 1; i < this.rawPointsMeters.length; i++){
                 const last = optimizedPoints[optimizedPoints.length - 1];
-                const current = this.rawPoints[i];
+                const current = this.rawPointsMeters[i];
                 const dx = current.x - last.x;
                 const dy = current.y - last.y;
-                if(Math.sqrt(dx*dx + dy*dy) > 5){
+                if(Math.sqrt(dx*dx + dy*dy) > toleranceMeters){
                     optimizedPoints.push(current);
                 }
             }
@@ -87,9 +86,7 @@ export class CanvasInputAdapter implements IWireInputHandler {
         });
     }
 
-    private buildWire(): Wire {
-        return this.buildWireFromPoints(this.rawPoints);
-    }
+    private buildWire(): Wire { return this.buildWireFromPoints(this.rawPointsMeters); }
 
     private buildWireFromPoints(points: Vector3D[]): Wire {
         const segments: Segment[] = [];
@@ -97,8 +94,7 @@ export class CanvasInputAdapter implements IWireInputHandler {
             const start = points[i];
             const end = points[i+1];
             segments.push({
-                start,
-                end,
+                start, end,
                 deltaL: { x: end.x - start.x, y: end.y - start.y, z: 0 },
                 midPoint: { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2, z: 0 }
             });

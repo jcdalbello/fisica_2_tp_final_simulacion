@@ -47,7 +47,6 @@ class SimulationController {
             this.renderFinal();
         });
 
-        // Configuración de la lógica del Sensor (Probe)
         this.inputHandler.onProbeMove((position: Vector3D | null) => {
             this.renderer.renderProbe(position);
             
@@ -56,16 +55,14 @@ class SimulationController {
                 return;
             }
 
-            // Calcula el campo solo en el punto exacto del mouse (muy ligero)
             const fieldBase = this.solver.calculateFieldAt(position, this.currentWire);
             
             if (fieldBase === null) {
-                this.probeUI.displayFieldValue(null); // Caso Singularidad
+                this.probeUI.displayFieldValue(null);
             } else {
-                const multiplier = this.stateProvider.getCurrentMultiplier();
-                const visualMultiplier = 100 * multiplier;
-                // Como el problema es en plano XY, solo existe Bz
-                this.probeUI.displayFieldValue(fieldBase.z * visualMultiplier);
+                // Se lee la corriente actual real en Amperes desde el slider
+                const currentI = this.stateProvider.getCurrentMultiplier();
+                this.probeUI.displayFieldValue(fieldBase.z * currentI);
             }
         });
 
@@ -89,10 +86,10 @@ class SimulationController {
     }
 
     public renderFinal() {
-        // Solo limpia y recalcula la capa inferior
-        const multiplier = this.stateProvider.getCurrentMultiplier(); 
-        const visualMultiplier = 100 * multiplier;
-        this.renderer.renderSimulation(this.currentWire, this.currentBaseField, visualMultiplier);
+        this.renderer.clear();
+        // Se envía la corriente real (I) al renderizador
+        const currentI = this.stateProvider.getCurrentMultiplier(); 
+        this.renderer.renderSimulation(this.currentWire, this.currentBaseField, currentI);
     }
 }
 
@@ -103,7 +100,7 @@ const btnClear = document.getElementById('btnClear') as HTMLButtonElement;
 const calculator = new BiotSavartCalculator();
 const renderer = new CanvasRenderer(simCanvas, overlayCanvas);
 const stateAdapter = new UIStateAdapter();
-const inputAdapter = new CanvasInputAdapter(simCanvas); // Escucha eventos solo en el canvas de abajo
+const inputAdapter = new CanvasInputAdapter(simCanvas); 
 const probeAdapter = new ProbeUIAdapter();
 
 new SimulationController(

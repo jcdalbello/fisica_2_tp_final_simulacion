@@ -15,9 +15,13 @@ export class ProbeUIAdapter implements IProbeUI {
             return;
         }
 
-        // Formateo con dos decimales y un símbolo indicativo
-        const formatted = value.toFixed(2);
-        this.displayElement.textContent = `${formatted}`;
+        // Conversión de Teslas a microteslas (1 T = 10^6 µT)
+        const valueInMicroTeslas = value * 1e6;
+        
+        // Al estar en microteslas, podemos volver a usar 2 decimales fijos
+        const formatted = valueInMicroTeslas.toFixed(2);
+        
+        this.displayElement.textContent = `${formatted} [µT]`;
         this.displayElement.style.color = value < 0 ? "#d32f2f" : "#1976d2";
     }
 }

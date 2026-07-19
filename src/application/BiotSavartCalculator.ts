@@ -13,14 +13,14 @@ export class BiotSavartCalculator implements IBiotSavartSolver {
             z: 0
         };
 
-        for (const seg of wire.segments) {
-            const rVec = VectorMath.sub(point, seg.midPoint);
+        for (const segment of wire.segments) {
+            const rVec = VectorMath.sub(point, segment.midPoint);
             const rMag = VectorMath.mag(rVec);
             
             if (rMag < this.SINGULARITY_THRESHOLD) return null;
 
             const rUnit: Vector3D = VectorMath.normalize(rVec);
-            const crossProduct = VectorMath.cross(seg.deltaL, rUnit);
+            const crossProduct = VectorMath.cross(segment.deltaL, rUnit);
 
             const inverseSquareOfDistance = 1 / Math.pow(rMag, 2);
             b = VectorMath.add(b, VectorMath.multiplyScalar(crossProduct, inverseSquareOfDistance));

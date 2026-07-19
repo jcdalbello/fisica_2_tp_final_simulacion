@@ -22,12 +22,10 @@ export class CanvasRenderer implements IRenderer {
         this.ctxOverlay.clearRect(0, 0, this.width, this.height);
     }
 
-    renderSimulation(wire: Wire, fieldData: FieldPoint[], multiplier: number): void {
+    renderSimulation(wire: Wire, fieldData: FieldPoint[], multiplier: number, phase: number): void {
         this.ctxMain.clearRect(0, 0, this.width, this.height);
         this.drawField(fieldData, multiplier);
-        
-        // Ahora pasamos el multiplicador para saber el sentido de la corriente
-        this.drawWire(wire, multiplier);
+        this.drawWire(wire, multiplier, phase);
     }
 
     renderProbe(position: Vector3D | null): void {
@@ -51,7 +49,7 @@ export class CanvasRenderer implements IRenderer {
         }
     }
 
-    private drawWire(wire: Wire, multiplier: number): void {
+    private drawWire(wire: Wire, multiplier: number, phase: number): void {
         if (wire.segments.length === 0) return;
         
         // 1. Dibujar el cable principal
@@ -61,14 +59,23 @@ export class CanvasRenderer implements IRenderer {
             this.ctxMain.lineTo(seg.end.x / this.pixelsToMeters, seg.end.y / this.pixelsToMeters);
         }
         this.ctxMain.strokeStyle = '#000';
-        this.ctxMain.lineWidth = 4; // Un poco más grueso para que las flechas se vean mejor
+        this.ctxMain.lineWidth = 4;
         this.ctxMain.stroke();
 
-        // 2. Dibujar flechas de dirección de corriente
-        const arrowSpacingPx = 40; // Distancia entre flechas
-        let accumulatedLengthPx = arrowSpacingPx / 2; // Empezamos a la mitad para que la primera no quede pegada al inicio
+        // 2. Lógica de animación fluida de flechas
+        const arrowSpacingPx = 40; 
+        const speed = 2; // Píxeles que se mueve por cada frame
 
-        this.ctxMain.fillStyle = '#fff'; // Flechas blancas para que contrasten sobre el cable negro
+        // Calculamos el desfase inicial dependiendo del sentido de la corriente
+        let offset = (phase * speed) % arrowSpacingPx;
+        if (multiplier < 0) {
+            offset = arrowSpacingPx - offset;
+        }
+
+        let nextArrowAt = offset;
+        let currentDist = 0;
+
+        this.ctxMain.fillStyle = '#fff';
         this.ctxMain.strokeStyle = '#000';
         this.ctxMain.lineWidth = 1;
 
@@ -77,36 +84,32 @@ export class CanvasRenderer implements IRenderer {
             const dyPx = seg.deltaL.y / this.pixelsToMeters;
             const segmentLengthPx = Math.sqrt(dxPx * dxPx + dyPx * dyPx);
 
-            accumulatedLengthPx += segmentLengthPx;
-
-            if (accumulatedLengthPx >= arrowSpacingPx) {
-                const pxMx = seg.midPoint.x / this.pixelsToMeters;
-                const pxMy = seg.midPoint.y / this.pixelsToMeters;
+            // Mientras la próxima flecha caiga dentro de este segmento...
+            while (currentDist + segmentLengthPx >= nextArrowAt) {
+                const overshoot = nextArrowAt - currentDist;
+                const ratio = overshoot / segmentLengthPx; // Porcentaje de avance en el segmento actual
                 
-                // Calculamos el ángulo del segmento
+                // Interpolación exacta de la posición
+                const px = (seg.start.x / this.pixelsToMeters) + dxPx * ratio;
+                const py = (seg.start.y / this.pixelsToMeters) + dyPx * ratio;
+
                 let angle = Math.atan2(dyPx, dxPx);
-                
-                // Si la corriente es negativa (invertida), rotamos la flecha 180 grados
-                if (multiplier < 0) {
-                    angle += Math.PI;
-                }
+                if (multiplier < 0) angle += Math.PI;
 
-                // Dibujar un triángulo para la cabeza de la flecha
                 const arrowSize = 6;
                 this.ctxMain.beginPath();
-                // Punta de la flecha
-                this.ctxMain.moveTo(pxMx + arrowSize * Math.cos(angle), pxMy + arrowSize * Math.sin(angle));
-                // Esquina inferior izquierda (140 grados)
-                this.ctxMain.lineTo(pxMx + arrowSize * Math.cos(angle + 2.443), pxMy + arrowSize * Math.sin(angle + 2.443));
-                // Esquina inferior derecha (-140 grados)
-                this.ctxMain.lineTo(pxMx + arrowSize * Math.cos(angle - 2.443), pxMy + arrowSize * Math.sin(angle - 2.443));
+                this.ctxMain.moveTo(px + arrowSize * Math.cos(angle), py + arrowSize * Math.sin(angle));
+                this.ctxMain.lineTo(px + arrowSize * Math.cos(angle + 2.443), py + arrowSize * Math.sin(angle + 2.443));
+                this.ctxMain.lineTo(px + arrowSize * Math.cos(angle - 2.443), py + arrowSize * Math.sin(angle - 2.443));
                 this.ctxMain.closePath();
                 
                 this.ctxMain.fill();
                 this.ctxMain.stroke();
 
-                accumulatedLengthPx = 0; // Reiniciar el contador para la próxima flecha
+                // Programamos la próxima flecha
+                nextArrowAt += arrowSpacingPx;
             }
+            currentDist += segmentLengthPx;
         }
     }
 

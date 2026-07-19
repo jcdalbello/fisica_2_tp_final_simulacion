@@ -6,8 +6,8 @@ export interface IBiotSavartSolver {
 }
 
 export interface IRenderer {
-    renderSimulation(wire: Wire, fieldData: FieldPoint[], multiplier: number): void;
-    renderProbe(position: Vector3D | null): void; // Dibuja el indicador
+    renderSimulation(wire: Wire, fieldData: FieldPoint[], multiplier: number, phase: number): void;
+    renderProbe(position: Vector3D | null): void;
     clear(): void;
 }
 
@@ -22,6 +22,6 @@ export interface IProbeUI {
 export interface IWireInputHandler {
     onWireDrawing(callback: (wire: Wire) => void): void;
     onWireComplete(callback: (wire: Wire) => void): void;
-    onProbeMove(callback: (position: Vector3D | null) => void): void; // Rastrea el mouse
+    onProbeMove(callback: (position: Vector3D | null) => void): void;
     clearState(): void;
 }

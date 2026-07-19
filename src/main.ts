@@ -11,6 +11,9 @@ class SimulationController {
     private gridPoints: Vector3D[] = [];
     private currentWire: Wire = { segments: [] };
     private currentBaseField: FieldPoint[] = [];
+    
+    // Nueva variable de fase para la animación
+    private animationPhase: number = 0;
 
     constructor(
         private solver: IBiotSavartSolver,
@@ -24,11 +27,12 @@ class SimulationController {
     ) {
         this.generateGrid();
         this.setupWiring();
+        // Iniciamos el bucle de renderizado continuo
+        this.startRenderLoop();
     }
 
     private generateGrid() {
         const spacingPx = 20;
-        // La grilla se genera directamente en metros
         for (let xPx = spacingPx / 2; xPx < this.widthPx; xPx += spacingPx) {
             for (let yPx = spacingPx / 2; yPx < this.heightPx; yPx += spacingPx) {
                 this.gridPoints.push({ 
@@ -42,15 +46,14 @@ class SimulationController {
 
     private setupWiring() {
         this.inputHandler.onWireDrawing((wire: Wire) => {
-            this.renderer.clear();
+            this.currentWire = wire;
+            this.currentBaseField = []; // Vaciamos el campo mientras se dibuja
             this.probeUI.displayFieldValue(0);
-            this.renderer.renderSimulation(wire, [], 0); 
         });
 
         this.inputHandler.onWireComplete((wire: Wire) => {
             this.currentWire = wire;
             this.calculateBaseField();
-            this.renderFinal();
         });
 
         this.inputHandler.onProbeMove((position: Vector3D | null) => {
@@ -70,14 +73,8 @@ class SimulationController {
                 this.probeUI.displayFieldValue(fieldBase.z * currentI);
             }
         });
-
-        if (this.stateProvider instanceof UIStateAdapter) {
-            this.stateProvider.onStateChange(() => {
-                if (this.currentWire.segments.length > 0) {
-                    this.renderFinal();
-                }
-            });
-        }
+        
+        // Eliminamos el onStateChange porque el game loop ya renderiza constantemente
     }
 
     private calculateBaseField() {
@@ -90,10 +87,23 @@ class SimulationController {
         }
     }
 
-    public renderFinal() {
-        this.renderer.clear();
-        const currentI = this.stateProvider.getCurrentMultiplier(); 
-        this.renderer.renderSimulation(this.currentWire, this.currentBaseField, currentI);
+    // Bucle principal de animación a 60 FPS
+    private startRenderLoop = () => {
+        if (this.currentWire.segments.length > 0) {
+            this.animationPhase += 1;
+            const currentI = this.stateProvider.getCurrentMultiplier(); 
+            this.renderer.renderSimulation(this.currentWire, this.currentBaseField, currentI, this.animationPhase);
+        } else {
+            this.renderer.clear();
+        }
+        
+        requestAnimationFrame(this.startRenderLoop);
+    };
+
+    public reset() {
+        this.currentWire = { segments: [] };
+        this.currentBaseField = [];
+        this.animationPhase = 0;
     }
 }
 
@@ -101,7 +111,6 @@ const simCanvas = document.getElementById('simCanvas') as HTMLCanvasElement;
 const overlayCanvas = document.getElementById('overlayCanvas') as HTMLCanvasElement;
 const btnClear = document.getElementById('btnClear') as HTMLButtonElement;
 
-// Se define la escala en la capa superior y se inyecta en cascada
 const PIXELS_TO_METERS = 0.01; 
 
 const calculator = new BiotSavartCalculator();
@@ -110,7 +119,7 @@ const stateAdapter = new UIStateAdapter();
 const inputAdapter = new CanvasInputAdapter(simCanvas, PIXELS_TO_METERS); 
 const probeAdapter = new ProbeUIAdapter();
 
-new SimulationController(
+const controller = new SimulationController(
     calculator, 
     renderer, 
     stateAdapter, 
@@ -122,7 +131,8 @@ new SimulationController(
 );
 
 btnClear.addEventListener('click', () => {
-    renderer.clear();
     inputAdapter.clearState();
+    controller.reset();
+    renderer.clear();
     probeAdapter.displayFieldValue(0);
 });

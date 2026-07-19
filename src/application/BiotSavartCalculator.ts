@@ -14,12 +14,19 @@ export class BiotSavartCalculator implements IBiotSavartSolver {
         for (const seg of wire.segments) {
             const rVec = VectorMath.sub(point, seg.midPoint);
             const rMag = VectorMath.mag(rVec);
-
+            
             // Todo está en metros, la física es pura
             if (rMag < this.SINGULARITY_THRESHOLD) return null;
 
-            const crossProduct = VectorMath.cross(seg.deltaL, rVec);
-            bz += this.MU_0_OVER_4PI * (crossProduct.z / Math.pow(rMag, 3));
+            const rUnit: Vector3D = {
+                x: rVec.x / rMag,
+                y: rVec.y / rMag,
+                z: rVec.z / rMag
+            };
+
+            const crossProduct = VectorMath.cross(seg.deltaL, rUnit);
+
+            bz += this.MU_0_OVER_4PI * (crossProduct.z / Math.pow(rMag, 2));
         }
 
         return { x: 0, y: 0, z: bz };

@@ -25,9 +25,11 @@ export class BiotSavartCalculator implements IBiotSavartSolver {
             const rUnit: Vector3D = VectorMath.normalize(rVec);
             const crossProduct = VectorMath.cross(seg.deltaL, rUnit);
 
-            const scalarFactor = this.MU_0_OVER_4PI / Math.pow(rMag, 2);
+            const scalarFactor = 1 / Math.pow(rMag, 2);
             b = VectorMath.add(b, VectorMath.multiplyScalar(crossProduct, scalarFactor));
         }
+
+        b = VectorMath.multiplyScalar(b, this.MU_0_OVER_4PI);
 
         return b;
     }

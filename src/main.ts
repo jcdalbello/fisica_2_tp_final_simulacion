@@ -12,7 +12,7 @@ class SimulationController {
     private currentWire: Wire = { segments: [] };
     private currentBaseField: FieldPoint[] = [];
     
-    // Nueva variable de fase para la animación
+    // Ahora phase actúa como un acumulador de distancia (en píxeles)
     private animationPhase: number = 0;
 
     constructor(
@@ -27,7 +27,6 @@ class SimulationController {
     ) {
         this.generateGrid();
         this.setupWiring();
-        // Iniciamos el bucle de renderizado continuo
         this.startRenderLoop();
     }
 
@@ -47,7 +46,7 @@ class SimulationController {
     private setupWiring() {
         this.inputHandler.onWireDrawing((wire: Wire) => {
             this.currentWire = wire;
-            this.currentBaseField = []; // Vaciamos el campo mientras se dibuja
+            this.currentBaseField = []; 
             this.probeUI.displayFieldValue(0);
         });
 
@@ -73,8 +72,6 @@ class SimulationController {
                 this.probeUI.displayFieldValue(fieldBase.z * currentI);
             }
         });
-        
-        // Eliminamos el onStateChange porque el game loop ya renderiza constantemente
     }
 
     private calculateBaseField() {
@@ -87,11 +84,16 @@ class SimulationController {
         }
     }
 
-    // Bucle principal de animación a 60 FPS
     private startRenderLoop = () => {
         if (this.currentWire.segments.length > 0) {
-            this.animationPhase += 1;
             const currentI = this.stateProvider.getCurrentMultiplier(); 
+            
+            // Ajuste de escala: un valor de I=50 mueve las flechas ~2.5px por frame
+            const speedFactor = 0.05; 
+            
+            // Acumulamos el movimiento basándonos en la magnitud absoluta de la corriente
+            this.animationPhase += Math.abs(currentI) * speedFactor;
+            
             this.renderer.renderSimulation(this.currentWire, this.currentBaseField, currentI, this.animationPhase);
         } else {
             this.renderer.clear();

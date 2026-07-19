@@ -64,10 +64,11 @@ export class CanvasRenderer implements IRenderer {
 
         // 2. Lógica de animación fluida de flechas
         const arrowSpacingPx = 40; 
-        const speed = 2; // Píxeles que se mueve por cada frame
 
-        // Calculamos el desfase inicial dependiendo del sentido de la corriente
-        let offset = (phase * speed) % arrowSpacingPx;
+        // La fase ya viene acumulada desde el controlador (la velocidad ya está aplicada)
+        let offset = phase % arrowSpacingPx;
+        
+        // El signo de la corriente invierte el sentido
         if (multiplier < 0) {
             offset = arrowSpacingPx - offset;
         }
@@ -84,12 +85,10 @@ export class CanvasRenderer implements IRenderer {
             const dyPx = seg.deltaL.y / this.pixelsToMeters;
             const segmentLengthPx = Math.sqrt(dxPx * dxPx + dyPx * dyPx);
 
-            // Mientras la próxima flecha caiga dentro de este segmento...
             while (currentDist + segmentLengthPx >= nextArrowAt) {
                 const overshoot = nextArrowAt - currentDist;
-                const ratio = overshoot / segmentLengthPx; // Porcentaje de avance en el segmento actual
+                const ratio = overshoot / segmentLengthPx; 
                 
-                // Interpolación exacta de la posición
                 const px = (seg.start.x / this.pixelsToMeters) + dxPx * ratio;
                 const py = (seg.start.y / this.pixelsToMeters) + dyPx * ratio;
 
@@ -106,7 +105,6 @@ export class CanvasRenderer implements IRenderer {
                 this.ctxMain.fill();
                 this.ctxMain.stroke();
 
-                // Programamos la próxima flecha
                 nextArrowAt += arrowSpacingPx;
             }
             currentDist += segmentLengthPx;

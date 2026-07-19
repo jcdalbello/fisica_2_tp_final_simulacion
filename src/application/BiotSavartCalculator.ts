@@ -9,7 +9,11 @@ export class BiotSavartCalculator implements IBiotSavartSolver {
     private readonly SINGULARITY_THRESHOLD = 0.05; 
 
     calculateFieldAt(point: Vector3D, wire: Wire): Vector3D | null {
-        let bz = 0; 
+        let b: Vector3D = {
+            x: 0,
+            y: 0,
+            z: 0
+        };
 
         for (const seg of wire.segments) {
             const rVec = VectorMath.sub(point, seg.midPoint);
@@ -19,12 +23,12 @@ export class BiotSavartCalculator implements IBiotSavartSolver {
             if (rMag < this.SINGULARITY_THRESHOLD) return null;
 
             const rUnit: Vector3D = VectorMath.normalize(rVec);
-
             const crossProduct = VectorMath.cross(seg.deltaL, rUnit);
 
-            bz += this.MU_0_OVER_4PI * (crossProduct.z / Math.pow(rMag, 2));
+            const scalarFactor = this.MU_0_OVER_4PI / Math.pow(rMag, 2);
+            b = VectorMath.add(b, VectorMath.multiplyScalar(crossProduct, scalarFactor));
         }
 
-        return { x: 0, y: 0, z: bz };
+        return b;
     }
 }

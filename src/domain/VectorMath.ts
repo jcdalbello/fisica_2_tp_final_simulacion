@@ -30,5 +30,11 @@ export const VectorMath = {
             y: v.y / magnitud,
             z: v.z / magnitud
         };
-    }
+    },
+
+    multiplyScalar: (v: Vector3D, scalar: number): Vector3D => ({
+        x: v.x * scalar,
+        y: v.y * scalar,
+        z: v.z * scalar
+    })
 };

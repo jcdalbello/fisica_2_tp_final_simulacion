@@ -125,18 +125,18 @@ export class CanvasRenderer implements IRenderer {
             
             this.ctxMain.globalAlpha = intensity;
 
-            if (mag < 0) {
-                this.ctxMain.fillStyle = '#1976d2';
-                this.ctxMain.beginPath();
-                this.ctxMain.arc(pxX, pxY, 3, 0, Math.PI * 2);
-                this.ctxMain.fill();
-            } else {
+            if (mag < 0) { 
                 this.ctxMain.strokeStyle = '#d32f2f';
                 this.ctxMain.lineWidth = 1.5;
                 this.ctxMain.beginPath();
                 this.ctxMain.moveTo(pxX - 4, pxY - 4); this.ctxMain.lineTo(pxX + 4, pxY + 4);
                 this.ctxMain.moveTo(pxX + 4, pxY - 4); this.ctxMain.lineTo(pxX - 4, pxY + 4);
                 this.ctxMain.stroke();
+            } else { 
+                this.ctxMain.fillStyle = '#1976d2';
+                this.ctxMain.beginPath();
+                this.ctxMain.arc(pxX, pxY, 3, 0, Math.PI * 2);
+                this.ctxMain.fill();
             }
         }
         this.ctxMain.globalAlpha = 1.0;

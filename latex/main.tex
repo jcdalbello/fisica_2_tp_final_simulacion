@@ -55,7 +55,7 @@
     
     \vspace{2cm}
     {\Large Trabajo Práctico Final \par}
-    {\Large Simulador de ley de Biot-Savart \par}
+    {\Large Simulador del campo magnético alrededor de un conductor de forma arbitraria \par}
     \vspace{0.5cm}
     {\large Julio 2026\par}
     
@@ -97,7 +97,7 @@ Un simulador que permita explorar estos casos que se alejan de las formas ideali
 El funcionamiento físico del simulador se basa en la ley de Biot-Savart \cite{serway}, que permite averiguar el valor del campo magnético $d\va{B}$ en algún punto $P$ del espacio asociado a un elemento de longitud $d \va{l}$ por el que pasa una corriente $I$ mediante la ecuación
 
 \begin{equation} \label{eq:biot_savart}
-    d\va{B} = \frac{\mu_0}{4 \pi} \frac{I d \va{l} \times \vu{r}}{r^2}
+    d\va{B} = \frac{\mu_0}{4 \pi} \frac{I d \va{l} \times \vu{r}}{\vb{r^2}}
 \end{equation}
 
 donde $\mu_0$ es la permeabilidad del espacio libre:
@@ -111,16 +111,20 @@ y con $\vu{r}$ siendo un vector unitario desde $d \va{l}$ hasta $P$, y $r$ la di
 Para obtener el campo magnético $\va{B}$ en cada punto es necesario sumar la contribución de todos los elementos $d\va{l}$ a lo largo del conductor, integrando la ecuación (\ref{eq:biot_savart}):
 
 \begin{equation}
-    \va{B} = \frac{\mu_0 I}{4 \pi} \int \frac{d \va{l} \times \vu{r}}{r^2}
+    \va{B} = \frac{\mu_0 I}{4 \pi} \int \frac{d \va{l} \times \vu{r}}{\vb{r^2}}
 \end{equation}
 
-\subsection{Implementación y limitaciones de la simulación}
-\subsubsection{Espacio de la simulación}
+\section{Implementación y limitaciones de la simulación}
+
+\subsection{Stack tecnológico}
+El simulador está desarrollado en TypeScript para la parte lógica, junto con HTML y CSS para la visualización, y Vite para el manejo y organización del proyecto. Puede ejecutarse localmente o probarse de manera online (\url{https://jcdalbello.github.io/fisica_2_tp_final_simulacion/}) en cualquier dispositivo.
+
+\subsection{Espacio de la simulación}
 A modo de delimitar el espacio y establecer una visualización estandarizada independientemente del dispositivo en el que se muestre, se usó un display de $800 \times 600 \ \si{px}$ para el trazado del conductor, y se estableció que $1 \ \si{px}$ de la representación se corresponde con $1$cm ($1 \ \si{px} \ \widehat{=} \ 1 \ \si{cm}$).
 
 Al trabajar con un trazo únicamente en el plano $XY$, la representación de los vectores del campo magnético se representa con ($\times$) para indicar un vector saliendo de la pantalla, y con ($\cdot$) para uno entrando a la pantalla.
 
-\subsubsection{Discretización y suma de Riemann}
+\subsection{Discretización y suma de Riemann}
 El mayor problema para implementar la ecuación mencionada es que está pensada para una integral, sobre infinitos valores, que no puede calcularse de forma analítica en el software. Para resolver esto, se usó como base el concepto de la suma de Riemann \cite{stewart}:
 \begin{equation}
     \int_{a}^{b} f(x) dx = \lim_{n \to \infty} \sum_{i=1}^n f(x_i) \Delta x_i
@@ -129,19 +133,19 @@ El mayor problema para implementar la ecuación mencionada es que está pensada 
 que propone que se puede aproximar a la integral por medio de una sumatoria de términos finitos, con una precisión proporcional a la cantidad de puntos de muestra $x_i$. En la simulación, estos términos están relacionados a las partes del conductor dibujado por el usuario, conformadas por los segmentos que conectan cada punto del trazo, de manera que a mayor cantidad de segmentos disponibles aumenta la exactitud de los cálculos:
 
 \begin{equation}\label{eq:aproximacion_campo_magnetico}
-    \va{B} \approx \frac{\mu_0 I}{4 \pi} \sum_{i=1}^{n} \frac{\Delta \va{l}_i \times \vu{r}_i}{r^{2}_{i}}
+    \va{B} \approx \frac{\mu_0 I}{4 \pi} \sum_{i=1}^{n} \frac{\Delta \va{l}_i \times \vu{r}_i}{\vb{r}^{2}_{i}}
 \end{equation}
 
-\subsubsection{Puntos de singularidad}
+\subsection{Puntos de singularidad}
 La intensidad del campo magnético en un punto $P$ es inversamente proporcional al cuadrado de la distancia con respecto al conductor ($\vb{B} \propto \frac{1}{r^2}$), por lo que su magnitud aumenta conforme esa distancia se acorta. Cuando $r \to 0$, matemáticamente se corresponde que $\vb{B} \to \infty$.
 
-Se usó un valor arbitrario \verb|SINGULARITY_THRESHOLD = 0.05| que representa 0.05 \si{cm} en el espacio de la simulación.
+Se usó un valor arbitrario \verb|SINGULARITY_THRESHOLD = 0.05| que representa 0.05 \si{cm} en el espacio de la simulación, para representar el umbral luego del cual se produce el error en los cálculos.
 Cuando se dan estos casos en el simulador, en lugar de mostrar la magnitud se aclara que $r \to 0$, como un caso particular.
 
-\subsubsection{Intensidad de la corriente}
+\subsection{Intensidad de la corriente}
 Para que la intensidad de la corriente fuese un parámetro controlado por el usuario y que no requiriese cálculos innecesarios, se aplicó como un multiplicador luego del cálculo de $\va{B}$, por lo que la implementación de la ecuación (\ref{eq:aproximacion_campo_magnetico}) se realiza con $I=1$.
 
-\subsubsection{Algoritmo}
+\subsection{Algoritmo}
 Teniendo claras las limitaciones del pasaje de la teoría pura a la computadora, se procedió a pensar el algoritmo discreto con los segmentos $\Delta\va{l}$ del conductor que se obtienen de la interacción del usuario con la interfaz:
 
 \begin{algorithm}[H]
@@ -171,7 +175,7 @@ Teniendo claras las limitaciones del pasaje de la teoría pura a la computadora,
 \end{algorithmic}
 \end{algorithm}
 
-\subsubsection{Implementación del algoritmo}
+\subsection{Implementación del algoritmo}
 
 Una vez representados los vectores tridimensionales ($\va{V}=(x,y,z)$) y las operaciones relacionadas, se procedió a pasar el algoritmo al código:
 
@@ -180,9 +184,6 @@ Una vez representados los vectores tridimensionales ($\va{V}=(x,y,z)$) y las ope
     caption={Implementación del algoritmo con la ley de Biot-Savart en TypeScript},
     label={listing_biot_savart}
 ]{code/biot_savart.ts}
-
-\subsubsection{Stack tecnológico}
-El simulador está desarrollado en TypeScript para la parte lógica, junto con HTML y CSS para la visualización, y Vite para el manejo y organización del proyecto. Puede ejecutarse de manera local o probarse de manera online (\url{https://jcdalbello.github.io/fisica_2_tp_final_simulacion/}) en cualquier dispositivo.
 
 \section{Interfaz y uso del simulador}
 La interfaz del simulador está compuesta por el slider de intensidad de la corriente ($I \in [1;100]$), los botones para invertir el sentido de la corriente y limpiar los trazos, el indicador de intensidad del campo magnético en $\si{\mu T}$, y el canvas sobre el que se dibuja el conductor:
@@ -245,7 +246,7 @@ A pesar de las limitaciones, permite visualizar un contenido que de otra manera 
 
 \clearpage
 
-\section*{Disponibilidad de código}
+\section*{Disponibilidad del código}
 El simulador puede probarse de manera online en \url{https://jcdalbello.github.io/fisica_2_tp_final_simulacion/}.
 
 Todo el material relacionado al proyecto, que incluye tanto el simulador como el presente documento y el código \LaTeX{} usado para generarlo, se encuentran disponibles en \url{https://github.com/jcdalbello/fisica_2_tp_final_simulacion}.
